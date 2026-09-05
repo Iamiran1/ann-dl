@@ -1,6 +1,6 @@
 ---
 exercise: data
-ai_use: "Claude foi usado para revisar a redação das análises e depurar o cálculo do separation ratio. Todo o código foi lido e testado por mim."
+ai_use: "Utilizei ChatGPT e Claude como apoio para compreender o enunciado, revisar código e discutir as análises. Todo o código foi lido e testado por mim."
 ---
 
 # 1. Data
@@ -9,112 +9,171 @@ ai_use: "Claude foi usado para revisar a redação das análises e depurar o cá
 
     [Exercises → Data](https://insper.github.io/ann-dl/){:target='_blank'}
 
-!!! tip "Este arquivo é o modelo de relatório"
-
-    A estrutura de títulos abaixo **espelha o enunciado**: `## Exercise N` para cada
-    exercício, `### A`, `### B`, ... para cada item. Mantenha essa ordem — a correção
-    percorre o relatório procurando por ela. Apague os blocos de instrução (como este)
-    conforme for preenchendo.
+---
 
 ## Exercise 1
 
-### Abordagem
+Quatro nuvens gaussianas bidimensionais, geradas com médias e desvios-padrão diferentes,
+servem para medir **quão separáveis** essas classes são — primeiro na configuração original
+(item A) e depois sob diferentes fatores de dispersão (item B).
 
-Descreva em 3–5 linhas *o que* foi feito e *por quê*: como os dados foram gerados, quais
-parâmetros do enunciado foram usados e qual semente aleatória garante a reprodutibilidade.
+Cada classe contribui com **100 pontos** — 400 no total — amostrados de uma normal
+bivariada com os parâmetros abaixo. Todas as amostragens partem do mesmo gerador,
+`np.random.default_rng(42)`, o que torna os números deste relatório reprodutíveis.
+
+| Classe | $\mu$ | $\sigma$ | Característica |
+|:---:|:---:|:---:|---|
+| **0** | `[2.0, 3.0]` | `[0.8, 2.5]` | estreita em $x_1$, muito alongada em $x_2$ |
+| **1** | `[5.0, 6.0]` | `[1.2, 1.9]` | a mais dispersa nas duas direções |
+| **2** | `[8.0, 1.0]` | `[0.9, 0.9]` | isotrópica e compacta |
+| **3** | `[15.0, 4.0]` | `[0.5, 2.0]` | afastada das demais em $x_1$ |
+
 
 ### Código
 
-O script vive em [`code/exercise1_point_clouds.py`](https://github.com/usuario/ann-dl/blob/main/docs/exercises/data/code/exercise1_point_clouds.py)
-e é incluído aqui pelo próprio arquivo — nunca copie e cole o texto do código, use a
-inclusão para que relatório e repositório nunca fiquem fora de sincronia.
+Um único script gera os dados e todas as figuras dos itens A e B:
+[`code/exercise1_point_clouds.py`](https://github.com/Iamiran1/ann-dl/blob/main/docs/exercises/data/code/exercise1_point_clouds.py).
 
-``` { .python .copy .select linenums='1' title="docs/exercises/data/code/exercise1_point_clouds.py" }
---8<-- "docs/exercises/data/code/exercise1_point_clouds.py"
-```
+??? example "Ver o código completo"
 
-1.  Semente fixa: sem ela, os números da tabela de resultados mudam a cada execução e a
-    correção não consegue reproduzir o seu relatório.
-2.  `plt.close(fig)` evita o vazamento de figuras quando o script gera várias em sequência.
+    ```{ .python .copy .select linenums='1' title="docs/exercises/data/code/exercise1_point_clouds.py" }
+    --8<-- "docs/exercises/data/code/exercise1_point_clouds.py"
+    ```
 
-### Figuras
+### A — Generate the clouds
 
-![Nuvens de pontos das quatro classes gaussianas](figures/fig01-exemplo.svg)
+#### Abordagem
+
+Cada classe é amostrada de uma normal bivariada com as médias e desvios-padrão da tabela
+acima, 100 pontos por classe. Os desvios são multiplicados por um fator `scale`, fixado em
+`1.0` neste item, e o gerador `np.random.default_rng(42)` é criado uma única vez no módulo,
+de modo que a mesma sequência de números é reproduzida a cada execução do script.
+
+#### Resultado
+
+![Nuvens de pontos das quatro classes gaussianas](figures/fig01-point-clouds.png)
+
 /// caption
-**Figura 1** — Dispersão das quatro classes no plano $(x_1, x_2)$ com `scale = 1.0`.
+**Figura 1** — Distribuição das quatro classes no plano $(x_1, x_2)$ com `scale = 1.0`.
+O marcador **✕** indica o centro $\mu$ de cada classe.
 ///
 
-### Análise
+A classe 3 fica isolada à direita ($\mu_1 = 15$) e é visualmente separável das demais por uma
+reta. As classes 0 e 1 se sobrepõem: seus centros distam 4.24 unidades, mas o desvio vertical
+da classe 0 ($\sigma_2 = 2.5$) é da mesma ordem dessa distância.
 
-Responda às perguntas do enunciado **citando os números** que você mediu. Uma resposta do
-tipo "as classes ficam mais misturadas" vale pouco; "o *separation ratio* cai de 4.13 para
-1.02 quando `scale` vai de 0.5 para 2.0, e a taxa de mistura sobe de 0.4% para 18.7%" vale.
+### B — More or less spread out
 
-## Exercise 2
+#### Abordagem
 
-### Abordagem
+Os mesmos quatro centros foram reutilizados, variando apenas a dispersão pelos fatores
+`scale ∈ {0.5, 1.0, 2.0, 4.0}` — as médias permanecem fixas, então qualquer mudança na
+sobreposição vem só do alargamento das gaussianas. Duas métricas foram calculadas:
 
-### Código
-
-### Figuras
-
-### Análise
-
-!!! note "Fronteiras não lineares"
-
-    Para justificar por que as cascas concêntricas exigem fronteira não linear, ajuda
-    escrever a condição de decisão. Um separador linear é
+- **Separation ratio** — razão entre a distância dos centros e a soma dos desvios médios:
 
     $$
-    f(\mathbf{x}) = \mathbf{w}^\top \mathbf{x} + b,
+    r_{ij} = \frac{\lVert \mu_i - \mu_j \rVert}
+                  {\bar{\sigma}_i + \bar{\sigma}_j}
     $$
 
-    enquanto a estrutura das cascas depende de $\lVert \mathbf{x} - \boldsymbol{\mu} \rVert$,
-    que não é expressável nessa forma.
+    Como o numerador não depende de $s$ e o denominador é proporcional a $s$, vale
+    $r_{ij}(s) = r_{ij}(1)/s$ — a separação cai com o inverso da escala.
 
-## Exercise 3
+- **Taxa de mistura** — fração de pontos cujo centro mais próximo não é o da própria classe,
+  isto é, o erro de um classificador de distância mínima aos centros verdadeiros.
 
-### Abordagem
+#### Resultado
 
-### Código
+![Comparação das classes para diferentes escalas](figures/fig02-point-clouds-scales.png)
 
-### Figuras
+/// caption
+**Figura 2** — As mesmas quatro classes para `scale = 0.5`, `1.0`, `2.0` e `4.0`,
+com eixos compartilhados para permitir comparação direta.
+///
 
-### Análise
 
-!!! warning "Vazamento de dados"
+=== "Separation ratio"
 
-    O `train_test_split` vem **antes** de qualquer imputação, encoding ou escalonamento.
-    Ajuste os transformadores só no treino e aplique-os ao teste.
+    | Par de classes | $s=0.5$ | $s=1.0$ | $s=2.0$ | $s=4.0$ |
+    |---|---:|---:|---:|---:|
+    | 0–1 | 2.652 | **1.326** | **0.663** | **0.331** |
+    | 0–2 | 4.960 | 2.480 | 1.240 | 0.620 |
+    | 0–3 | 8.992 | 4.496 | 2.248 | 1.124 |
+    | 1–2 | 4.760 | 2.380 | 1.190 | 0.595 |
+    | 1–3 | 7.284 | 3.642 | 1.821 | 0.911 |
+    | 2–3 | 7.084 | 3.542 | 1.771 | 0.886 |
 
-``` mermaid
-flowchart LR
-    raw[Dados brutos] --> split{{train_test_split}}
-    split -->|treino| fit[fit_transform]
-    split -->|teste| apply[transform]
-    fit --> model[Modelo]
-    apply --> model
-```
+    Em negrito, o **par mais crítico** em cada escala. O par 0–1 é sempre o menor, e é o
+    primeiro a cruzar $r_{ij} < 1$ (centros mais próximos que a soma das dispersões),
+    o que acontece já em `scale = 2.0`.
 
+=== "Taxa de mistura"
+
+    | `scale` | Taxa de mistura | Pontos mal atribuídos |
+    |---:|---:|---:|
+    | 0.5 | 0.0 % | 0 / 400 |
+    | 1.0 | 5.0 % | 20 / 400 |
+    | 2.0 | 19.25 % | 77 / 400 |
+    | 4.0 | 48.25 % | 193 / 400 |
+
+    ![Taxa de mistura em função da escala](figures/fig03-mixing-rate.png)
+
+    /// caption
+    **Figura 3** — Taxa de mistura em função do fator de escala $s$.
+    ///
+
+
+### C — Overlap and decision boundaries
+
+#### Pergunta 1
+Descreva a sobreposição das quatro classes no dataset original. Uma única fronteira linear conseguiria separar todas as classes? E um conjunto de fronteiras lineares?
+
+
+#### Resposta 1
+No dataset original, as quatro classes formam grupos relativamente distintos. Não seria possível utilizar uma única fronteira linear para separar todas as classes. No entanto, um conjunto de fronteiras lineares poderia dividir o espaço em diferentes regiões, permitindo uma melhor separação entre as quatro classes.
+
+---
+#### Pergunta 2
+Desenhe sobre a Figura 1 as possíveis fronteiras de decisão que uma rede neural treinada aprenderia para separar as classes.
+
+
+#### Resposta 2
+![Esboço da Fronteiras de decisão](figures/fig04-decision-boundaries.png)
+
+
+### Pergunta 3
+Compare o desenho das fronteiras com o item B: quando as classes ficam mais dispersas, como muda a região em que a rede inevitavelmente irá errar?
+
+
+### Resposta 3
+À medida que o scale aumenta, as classes se tornam mais dispersas e as regiões de sobreposição entre elas crescem. Com isso, a delimitação por fronteiras de decisão se torna mais difícil, pois amostras de classes diferentes passam a ocupar regiões próximas ou coincidentes. Esse comportamento está diretamente relacionado ao mixing rate: quanto maior a escala, maior tende a ser a taxa de mistura entre as classes e, consequentemente, maior a região em que a rede inevitavelmente cometerá erros.
+
+---
 ## Results summary
 
-Preencha **todas** as linhas — linha em branco é lida como exercício incompleto.
+Esta tabela não substitui nenhuma análise — é um índice dos números já calculados, reunidos
+em um só lugar para que a correção confira cada valor sem ter que procurá-lo no texto.
 
-| # | Métrica | Valor |
-|---|---------|-------|
-| 1 | Separation ratio (`scale = 0.5`) | |
-| 2 | Separation ratio (`scale = 1.0`) | |
-| 3 | Separation ratio (`scale = 2.0`) | |
-| 4 | Taxa de mistura (`scale = 1.0`) | |
-| 5 | Distância entre centros — gaussianas 5D | |
-| 6 | Variância explicada — PC1 + PC2 | |
-| 7 | Raio médio — casca interna | |
-| 8 | Raio médio — casca externa | |
-| 9 | Amostras de treino após o split | |
-| 10 | Amostras de teste após o split | |
-| 11 | Colunas com valores ausentes | |
-| 12 | Features após o encoding | |
-| 13 | Faixa das features após o escalonamento | |
+!!! note "Preenchimento parcial"
+
+    As linhas 1–5 vêm do Exercise 1. As linhas 6–13 serão preenchidas com os Exercises 2 e 3.
+
+| # | Item | Your value |
+|---|------|------------|
+| 1 | Mixing rate at $s = 0.5$ | 0.0 % (0/400) |
+| 2 | Mixing rate at $s = 1$ | 5.0 % (20/400) |
+| 3 | Mixing rate at $s = 2$ | 19.25 % (77/400) |
+| 4 | Mixing rate at $s = 4$ | 48.25 % (193/400) |
+| 5 | Smallest $r_{ij}$ at $s = 1$, and which pair | 1.326 — par 0–1 |
+| 6 | Distance between centers — Dataset I | |
+| 7 | Distance between centers — Dataset II | |
+| 8 | Explained variance PC1 + PC2 — Dataset I | |
+| 9 | Explained variance PC1 + PC2 — Dataset II | |
+| 10 | Share of the positive class in `Transported` | |
+| 11 | Mean and median of `FoodCourt` on the training set, before transforming | |
+| 12 | Final shape of the training feature matrix | |
+| 13 | Minimum and maximum of the training and test sets after scaling | |
 
 ## Discussão
 

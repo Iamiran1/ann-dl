@@ -1,6 +1,6 @@
 ---
 exercise: data
-ai_use: "Utilizei ChatGPT e Claude como apoio para compreender o enunciado, revisar código e discutir as análises. Todo o código foi lido e testado por mim."
+ai_use: "Utilizei ChatGPT e Claude como apoio para compreender o enunciado, revisar código e discutir as análises, estruturação do documento e desenvolvimento do conteúdo produzido por mim. Todo o código foi lido e testado por mim."
 ---
 
 # 1. Data
@@ -191,39 +191,25 @@ Um único script gera os dois datasets, aplica PCA e produz as figuras dos itens
 As classes **A** e **B** são amostradas de normais multivariadas em 5D com
 `np.random.multivariate_normal`, 500 pontos cada — uma matriz `(500, 5)` por classe.
 
-Para a **classe A**:
+**Classe A** — média $\mu_A = [0,\ 0,\ 0,\ 0,\ 0]$ e covariância $\Sigma_A$:
 
-$$
-\mu_A = [0, 0, 0, 0, 0]
-$$
+|  | $x_1$ | $x_2$ | $x_3$ | $x_4$ | $x_5$ |
+|:---:|---:|---:|---:|---:|---:|
+| **$x_1$** | 1.0 | 0.8 | 0.1 | 0.0 | 0.0 |
+| **$x_2$** | 0.8 | 1.0 | 0.3 | 0.0 | 0.0 |
+| **$x_3$** | 0.1 | 0.3 | 1.0 | 0.5 | 0.0 |
+| **$x_4$** | 0.0 | 0.0 | 0.5 | 1.0 | 0.2 |
+| **$x_5$** | 0.0 | 0.0 | 0.0 | 0.2 | 1.0 |
 
-$$
-\Sigma_A =
-\begin{bmatrix}
-1.0 & 0.8 & 0.1 & 0.0 & 0.0 \\
-0.8 & 1.0 & 0.3 & 0.0 & 0.0 \\
-0.1 & 0.3 & 1.0 & 0.5 & 0.0 \\
-0.0 & 0.0 & 0.5 & 1.0 & 0.2 \\
-0.0 & 0.0 & 0.0 & 0.2 & 1.0
-\end{bmatrix}
-$$
+**Classe B** — média $\mu_B = [1.5,\ 1.5,\ 1.5,\ 1.5,\ 1.5]$ e covariância $\Sigma_B$:
 
-Para a **classe B**:
-
-$$
-\mu_B = [1.5, 1.5, 1.5, 1.5, 1.5]
-$$
-
-$$
-\Sigma_B =
-\begin{bmatrix}
-1.5 & -0.7 & 0.2 & 0.0 & 0.0 \\
--0.7 & 1.5 & 0.4 & 0.0 & 0.0 \\
-0.2 & 0.4 & 1.5 & 0.6 & 0.0 \\
-0.0 & 0.0 & 0.6 & 1.5 & 0.3 \\
-0.0 & 0.0 & 0.0 & 0.3 & 1.5
-\end{bmatrix}
-$$
+|  | $x_1$ | $x_2$ | $x_3$ | $x_4$ | $x_5$ |
+|:---:|---:|---:|---:|---:|---:|
+| **$x_1$** | 1.5 | −0.7 | 0.2 | 0.0 | 0.0 |
+| **$x_2$** | −0.7 | 1.5 | 0.4 | 0.0 | 0.0 |
+| **$x_3$** | 0.2 | 0.4 | 1.5 | 0.6 | 0.0 |
+| **$x_4$** | 0.0 | 0.0 | 0.6 | 1.5 | 0.3 |
+| **$x_5$** | 0.0 | 0.0 | 0.0 | 0.3 | 1.5 |
 
 As duas classes não diferem apenas pela média. A classe B tem variâncias maiores (1.5 contra
 1.0 na diagonal) e, sobretudo, uma **estrutura de correlação diferente**: as duas primeiras
@@ -394,6 +380,287 @@ resultados e escreva uma função simples das entradas que consiga separar o Dat
 Não. O fato de as classes parecerem misturadas após o PCA não prova que sejam inseparáveis no espaço original, pois a projeção pode descartar informações relevantes. No Dataset II, a separação é melhor observada pelo raio dos pontos. Uma regra simples como classificar pontos com \(\|x\| < 3.5\) como classe C e os demais como classe D consegue separar bem as duas classes.
 
 ---
+## Exercise 3
+
+!!! info "Fonte dos dados"
+
+    [Spaceship Titanic — Kaggle](https://www.kaggle.com/competitions/spaceship-titanic/overview){:target='_blank'}
+
+Os dois primeiros exercícios usaram dados sintéticos, onde a geometria era conhecida de
+antemão. Este usa um dataset real — o **Spaceship Titanic**, da competição homônima do
+Kaggle — em que a estrutura precisa ser descoberta e os dados vêm com os problemas de sempre:
+valores faltantes, variáveis categóricas e features em escalas muito diferentes.
+
+O arquivo `train.csv` — o mesmo da competição — tem **8693 linhas e 14 colunas**:
+identificação do passageiro (`PassengerId`, `Name`, `Cabin`), atributos categóricos
+(`HomePlanet`, `CryoSleep`, `Destination`, `VIP`), a idade (`Age`), cinco colunas de gastos
+a bordo (`RoomService`, `FoodCourt`, `ShoppingMall`, `Spa`, `VRDeck`) e a coluna-alvo
+`Transported`.
+
+### Código
+
+Um único script carrega o CSV, produz as tabelas desta seção e faz o split:
+[`code/exercise3_spaceship_tatanic.py`](https://github.com/Iamiran1/ann-dl/blob/main/docs/exercises/data/code/exercise3_spaceship_tatanic.py).
+
+??? example "Ver o código completo"
+
+    ```{ .python .copy .select linenums='1' title="docs/exercises/data/code/exercise3_spaceship_tatanic.py" }
+    --8<-- "docs/exercises/data/code/exercise3_spaceship_tatanic.py"
+    ```
+
+### Pergunta 1
+
+Descreva o objetivo do dataset: o que a coluna `Transported` representa? Qual é o balanço de
+classes entre os dois rótulos?
+
+### Resposta 1
+
+O objetivo é prever quais passageiros da Spaceship Titanic foram **transportados para uma
+dimensão alternativa** depois que a nave colidiu com uma anomalia espaço-temporal. A coluna
+`Transported` registra esse desfecho e é o nosso **alvo**: assume `True` para o passageiro
+que foi transportado e `False` para quem não foi. Como só há dois valores possíveis, trata-se
+de um problema de **classificação binária**.
+
+Quanto ao balanço, as duas classes estão praticamente empatadas:
+
+| `Transported` | Passageiros | Proporção |
+|:---:|---:|---:|
+| `True` | 4378 | **50.36 %** |
+| `False` | 4315 | 49.64 % |
+| **Total** | 8693 | 100 % |
+
+A diferença entre os rótulos é de apenas 63 passageiros — cerca de 0.7 ponto percentual — e
+não há valores faltantes em `Transported`.
+
+### Pergunta 2
+
+Liste as features, separando as numéricas (ex.: `Age`, `RoomService`) das categóricas
+(ex.: `HomePlanet`, `Destination`).
+
+### Resposta 2
+
+Tirando a coluna-alvo `Transported`, sobram **13 features**: 6 numéricas e 7 categóricas.
+
+**Features numéricas** — valores quantitativos, em que a ordem e a diferença entre os
+valores têm significado:
+
+| Feature | Únicos | Faltando | Descrição |
+|---|---:|---:|---|
+| `Age` | 80 | 179 (2.1 %) | idade do passageiro |
+| `RoomService` | 1273 | 181 (2.1 %) | gasto com serviço de quarto |
+| `FoodCourt` | 1507 | 183 (2.1 %) | gasto na praça de alimentação |
+| `ShoppingMall` | 1115 | 208 (2.4 %) | gasto no shopping |
+| `Spa` | 1327 | 183 (2.1 %) | gasto no spa |
+| `VRDeck` | 1306 | 188 (2.2 %) | gasto no deck de realidade virtual |
+
+As cinco colunas de gasto formam um bloco à parte: são todas em dólares, fortemente
+assimétricas (a maioria dos passageiros gasta 0).
+
+**Features categóricas** — valores que nomeiam grupos, sem ordem natural:
+
+| Feature | Únicos | Faltando | Descrição |
+|---|---:|---:|---|
+| `HomePlanet` | 3 | 201 (2.3 %) | planeta de origem |
+| `CryoSleep` | 2 | 217 (2.5 %) | se estava em animação suspensa |
+| `Destination` | 3 | 182 (2.1 %) | planeta de destino |
+| `VIP` | 2 | 203 (2.3 %) | se pagou serviço VIP |
+| `Cabin` | 6560 | 199 (2.3 %) | cabine, no formato `deck/num/lado` |
+| `PassengerId` | 8693 | 0 | identificador, no formato `gggg_pp` |
+| `Name` | 8473 | 200 (2.3 %) | nome do passageiro |
+
+
+
+### Pergunta 3
+
+Monte uma tabela de valores faltantes por coluna, em contagem absoluta e em porcentagem.
+
+### Resposta 3
+
+| Coluna | Faltando | % |
+|---|---:|---:|
+| `PassengerId` | 0 | 0.00 % |
+| `HomePlanet` | 201 | 2.31 % |
+| `CryoSleep` | 217 | 2.50 % |
+| `Cabin` | 199 | 2.29 % |
+| `Destination` | 182 | 2.09 % |
+| `Age` | 179 | 2.06 % |
+| `VIP` | 203 | 2.34 % |
+| `RoomService` | 181 | 2.08 % |
+| `FoodCourt` | 183 | 2.11 % |
+| `ShoppingMall` | 208 | 2.39 % |
+| `Spa` | 183 | 2.11 % |
+| `VRDeck` | 188 | 2.16 % |
+| `Name` | 200 | 2.30 % |
+| `Transported` | 0 | 0.00 % |
+
+
+---
+
+### Pergunta 4
+
+Para as colunas de gasto (`RoomService`, `FoodCourt`, `ShoppingMall`, `Spa`, `VRDeck`),
+informe média, mediana e máximo. Compare média e mediana: o que essa diferença diz sobre a
+dispersão e a assimetria dessas distribuições?
+
+### Resposta 4
+
+| | `RoomService` | `FoodCourt` | `ShoppingMall` | `Spa` | `VRDeck` |
+|---|---:|---:|---:|---:|---:|
+| **média** | 224.69 | 458.08 | 173.73 | 311.14 | 304.85 |
+| **mediana** | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 |
+| **máximo** | 14 327 | 29 813 | 23 492 | 22 408 | 24 133 |
+
+A mediana é **zero nas cinco colunas**, enquanto a média fica entre 174 e 458. Uma mediana
+zero significa que **mais da metade dos passageiros não gastou nada** naquele serviço — de
+fato, o percentual de zeros vai de 62.6 % (`Spa`) a 65.8 % (`ShoppingMall`). Se a média
+mesmo assim é positiva e alta, é porque a minoria que gasta, gasta muito.
+
+O tamanho do desequilíbrio fica claro comparando os extremos com o centro:
+
+| | `RoomService` | `FoodCourt` | `ShoppingMall` | `Spa` | `VRDeck` |
+|---|---:|---:|---:|---:|---:|
+| % de zeros | 65.5 % | 64.1 % | 65.8 % | 62.6 % | 64.6 % |
+| percentil 75 | 47 | 76 | 27 | 59 | 46 |
+| percentil 99 | 3 096 | 8 033 | 2 333 | 5 390 | 5 647 |
+| média entre quem gastou | 652 | 1 276 | 509 | 831 | 861 |
+
+Em `FoodCourt`, o máximo (29 813) é **65 vezes** a média e cerca de 390 vezes o percentil 75.
+
+Isso caracteriza distribuições fortemente **assimétricas à direita** (*right-skewed*): a
+massa dos dados está empilhada no zero e uma cauda longa se estende para valores muito altos.
+Como a média é sensível a valores extremos e a mediana não, ter a **média muito acima da
+mediana** é a assinatura clássica desse formato. Vale notar que a média aqui é uma
+péssima descrição do passageiro típico: ela não representa nem quem não gastou (a maioria)
+nem quem gastou de verdade (cuja média é 2 a 3 vezes maior).
+
+Há uma explicação estrutural para tantos zeros. Passageiros em animação suspensa não podem
+consumir nada a bordo, e os dados confirmam a regra sem exceção: dos **3037** passageiros com
+`CryoSleep = True`, **100 %** têm gasto total zero. Ou seja, boa parte dos zeros não é dado
+faltante disfarçado nem ausência de consumo por escolha — é uma consequência determinística
+de outra coluna.
+
+Consequências para o pré-processamento:
+
+- **Escalonar sem transformar não resolve.** Um `StandardScaler` aplicado direto move e
+  reescala, mas não muda o formato: a cauda continua lá, e mais de 60 % dos pontos ficam
+  amontoados no mesmo valor.
+- **Uma transformação logarítmica é o caminho natural.** Como há zeros, a forma usual é
+  `log(1 + x)` (`np.log1p`), que comprime a cauda e mantém o zero em zero.
+- **A imputação das numéricas deve usar a mediana, não a média.** Preencher um `FoodCourt`
+  ausente com 458 inventaria um gasto alto para um passageiro que muito provavelmente não
+  gastou nada — a mediana (0) é a escolha coerente com a distribuição.
+
+### B — Split before you transform
+
+#### Abordagem
+
+A separação usa `train_test_split` do scikit-learn com três decisões explícitas:
+
+```python
+X = df.drop(columns=["Transported"])
+y = df["Transported"]
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y,
+    test_size=0.20,
+    random_state=42,
+    stratify=y,
+)
+```
+
+- `test_size=0.20` — divisão 80/20;
+- `stratify=y` — preserva a proporção das classes nas duas partes;
+- `random_state=42` — semente fixa, para que a divisão seja sempre a mesma.
+
+#### Resultado
+
+| Conjunto | Linhas | Colunas | `True` | `False` | % da classe positiva |
+|---|---:|---:|---:|---:|---:|
+| **Treino** | 6954 | 13 | 3502 | 3452 | 50.36 % |
+| **Teste** | 1739 | 13 | 876 | 863 | 50.37 % |
+| **Total** | 8693 | 13 | 4378 | 4315 | 50.36 % |
+
+A estratificação funcionou: a proporção da classe positiva na base completa (50.36 %) é
+reproduzida no treino (50.36 %) e no teste (50.37 %), com diferença de 0.01 ponto percentual.
+As 13 colunas são as features — `Transported` saiu para o vetor `y`.
+
+#### Pergunta
+
+Explique, em duas ou três frases, por que esse split vem antes da imputação e do
+escalonamento.
+
+#### Resposta
+
+O split deve vir antes da imputação e da normalização para evitar **data leakage**.
+Estatísticas como média, mediana, desvio-padrão e as categorias observadas precisam ser
+calculadas **apenas** com os dados de treino; se informações do conjunto de teste entrarem
+nessas transformações, o modelo recebe indiretamente informação que não deveria conhecer
+durante o treinamento. O resultado é uma avaliação otimista: o desempenho medido no teste
+deixa de estimar o desempenho em dados realmente novos, que é a única coisa que interessa.
+
+
+### D — Verify and visualize
+
+#### Resultado
+
+![FoodCourt antes e depois da transformação logarítmica](figures/fig07-foodcourt-log.png)
+
+/// caption
+**Figura 7** — `FoodCourt` no conjunto de treino, antes e depois de `log(1 + x)`.
+///
+
+À esquerda, a distribuição original: uma única barra gigante junto ao zero e o restante do
+eixo praticamente vazio, esticado até 29 813 por causa de um punhado de passageiros.
+
+À direita, depois de `log(1 + x)`, a cauda foi comprimida para o intervalo 0–10 e a
+distribuição revela uma estrutura que antes estava escondida: o pico em zero continua (são os
+~64 % que não gastaram, e o log preserva o zero), mas quem gastou aparece agora como um
+segundo agrupamento em torno de 6–8. De uma barra única passamos a **duas populações
+distinguíveis** — exatamente o tipo de estrutura que a rede consegue aproveitar.
+
+#### Checagens finais
+
+| Verificação | Treino | Teste |
+|---|---|---|
+| `NaN` restantes | **0** | **0** |
+| Shape da matriz de features | **(6954, 17)** | **(1739, 17)** |
+| Valor mínimo | −2.00 | −2.00 |
+| Valor máximo | **3.51** | **3.37** |
+
+As 17 colunas se dividem em 7 numéricas (`Age`, as cinco de gasto e `TotalSpend`) e 10
+geradas pelo *one-hot* de `HomePlanet` (3), `CryoSleep` (2), `Destination` (3) e `VIP` (2).
+
+**Sobre a compatibilidade com a tanh.** A faixa está adequada, mas com uma ressalva que vale
+registrar. A tanh satura fora de aproximadamente $[-2, 2]$ — `tanh(2) = 0.964`,
+`tanh(3.51) = 0.9982` — e nessa região o gradiente é quase nulo, o que trava o aprendizado.
+Na matriz final, **95.6 %** dos valores numéricos estão dentro de $[-2, 2]$ e apenas
+**0.06 %** passam de 3. Ou seja, a grande maioria dos dados cai na região útil da ativação;
+os poucos extremos vêm de `Age`, cujo máximo padronizado é 3.51.
+
+
+#### Pergunta
+
+Em um parágrafo: qual das suas decisões de pré-processamento você acha que mais afetaria o
+treinamento da rede, e por quê?
+
+#### Resposta
+
+A decisão de maior impacto é a **transformação logarítmica das colunas de gasto**, e este
+exercício produziu a evidência disso sem que fosse preciso treinar nada. Sem o `log1p`, o
+`TotalSpend` chegava ao escalonamento com a cauda bruta e a matriz final ia até 12.54 desvios
+padrão; como `tanh(12.54)` é 1.0 até a décima casa decimal, todos esses exemplos cairiam na
+região plana da ativação, onde o gradiente é essencialmente zero — os neurônios que os
+recebessem simplesmente parariam de aprender, e os passageiros de gasto alto, que são
+justamente os mais informativos, seriam os primeiros a ser ignorados. Com o `log1p` o máximo
+cai para 3.51 e 95.6 % dos valores passam a ocupar a faixa útil da tanh. Vale notar que o
+escalonamento sozinho **não** resolveria: o `StandardScaler` desloca e reescala, mas não muda
+o formato da distribuição, de modo que a razão entre o extremo e o corpo dos dados
+permaneceria a mesma. A imputação pela mediana e o *one-hot* também importam, mas erram por
+margens menores — trocar mediana por média em `FoodCourt` inventaria um gasto de 458 para
+quem provavelmente não gastou nada, o que desloca a distribuição sem, no entanto, saturar a
+ativação.
+
+---
 ## Results summary
 
 Esta tabela não substitui nenhuma análise — é um índice dos números já calculados, reunidos
@@ -401,8 +668,8 @@ em um só lugar para que a correção confira cada valor sem ter que procurá-lo
 
 !!! note "Preenchimento parcial"
 
-    As linhas 1–5 vêm do Exercise 1 e as linhas 6–9, do Exercise 2. As linhas 10–13 serão
-    preenchidas com o Exercise 3.
+    As linhas 1–5 vêm do Exercise 1 e as linhas 6–9, do Exercise 2. A linha 10 vem da
+    Pergunta 1 do Exercise 3; as linhas 11–13 serão preenchidas conforme o Exercise 3 avança.
 
 | # | Item | Your value |
 |---|------|------------|
@@ -415,16 +682,15 @@ em um só lugar para que a correção confira cada valor sem ter que procurá-lo
 | 7 | Distance between centers — Dataset II | 0.199 |
 | 8 | Explained variance PC1 + PC2 — Dataset I | 67.91 % |
 | 9 | Explained variance PC1 + PC2 — Dataset II | 42.63 % |
-| 10 | Share of the positive class in `Transported` | |
-| 11 | Mean and median of `FoodCourt` on the training set, before transforming | |
-| 12 | Final shape of the training feature matrix | |
-| 13 | Minimum and maximum of the training and test sets after scaling | |
+| 10 | Share of the positive class in `Transported` | 50.36 % (4378/8693) |
+| 11 | Mean and median of `FoodCourt` on the training set, before transforming | média 458.08 — mediana 0.00 |
+| 12 | Final shape of the training feature matrix | (6954, 17) |
+| 13 | Minimum and maximum of the training and test sets after scaling | treino [−2.00, 3.51] — teste [−2.00, 3.37] |
 
 ## Discussão
 
-O que foi difícil? Onde a intuição falhou? Que decisão você tomaria diferente?
+A principal dificuldade foi perceber como diferentes distribuições e escalas afetam a separabilidade dos dados. A intuição falhou principalmente nos casos em que classes visualmente misturadas ainda podiam ser separadas por informações presentes em dimensões maiores.
 
 ## Conclusão
 
-O que este exercício mostrou sobre a relação entre distribuição dos dados e a complexidade
-da fronteira de decisão que a rede precisa aprender?
+O exercício mostrou que quanto mais complexa é a distribuição dos dados, mais complexa precisa ser a fronteira de decisão. Estruturas não lineares, como classes concêntricas, exigem modelos capazes de aprender fronteiras também não lineares.

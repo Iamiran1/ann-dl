@@ -1,6 +1,6 @@
 ---
 exercise: vae
-ai_use: "Utilizei IA (Claude) como ferramenta de apoio ao meu aprendizado: para interpretar o enunciado, entender a arquitetura do VAE, a reparametrização e os termos da loss, revisar o código que escrevi e estruturar o documento. Todo o código e as análises foram lidos, executados e revisados por mim, e consigo explicar cada passo."
+ai_use: "Utilizei IA (Claude) como ferramenta de apoio ao meu aprendizado: para interpretar o enunciado, entender a arquitetura do VAE, a reparametrização e os termos da loss, revisar o código que escrevi e estruturar o documento. Todo o código e as análises foram lidos, executados e revisados por mim."
 ---
 
 # 4. VAE
@@ -86,7 +86,7 @@ rótulo acima de cada uma.
     | Parte | Camadas |
     |---|---|
     | Encoder | $784 \to 512 \to 256$, ReLU depois de cada |
-    | Heads | duas lineares $256 \to d$: uma para $\boldsymbol{\mu}$, outra para $\log \boldsymbol{\sigma}^2$ |
+    | Heads | duas lineares $256 \to d$: uma para $\mu$, outra para $\log \sigma^2$ |
     | Decoder | $d \to 256 \to 512 \to 784$, ReLU nas ocultas, sigmoide na saída |
 
     com dimensão latente $d = 16$. A loss por imagem, somada nos pixels e nas dimensões
@@ -97,8 +97,8 @@ rótulo acima de cada uma.
     + \frac{1}{2}\sum_{i=1}^{d}\Big(\mu_i^2 + \sigma_i^2 - 1 - \log\sigma_i^2\Big)
     $$
 
-    com $\mathbf{z} = \boldsymbol{\mu} + \boldsymbol{\sigma} \odot \boldsymbol{\varepsilon}$,
-    $\boldsymbol{\varepsilon} \sim \mathcal{N}(0, I)$, média sobre as imagens do batch.
+    com $\mathbf{z} = \mu + \sigma \odot \varepsilon$,
+    $\varepsilon \sim \mathcal{N}(0, I)$, média sobre as imagens do batch.
 
 **Arquitetura.** A classe `VAE` recebe `d` como parâmetro, para ser reaproveitada no
 Exercise 2 com $d = 2$. No `__init__` são criadas as camadas; os métodos `encode`,
@@ -119,14 +119,14 @@ def forward(self, x):
 ```
 
 As duas cabeças têm a mesma forma ($256 \to d$), mas pesos próprios. O que dá a cada uma o
-seu papel é onde a saída é usada: $\boldsymbol{\mu}$ entra somada em $\mathbf{z}$, e
-$\log\boldsymbol{\sigma}^2$ entra multiplicando o ruído. A rede prevê
-$\log\boldsymbol{\sigma}^2$ em vez de $\boldsymbol{\sigma}$ porque o log pode assumir
-qualquer valor real, enquanto $\boldsymbol{\sigma}$ precisa ser positivo. Por isso as
+seu papel é onde a saída é usada: $\mu$ entra somada em $\mathbf{z}$, e
+$\log\sigma^2$ entra multiplicando o ruído. A rede prevê
+$\log\sigma^2$ em vez de $\sigma$ porque o log pode assumir
+qualquer valor real, enquanto $\sigma$ precisa ser positivo. Por isso as
 cabeças não têm ativação.
 
-**Reparametrização.** O $\mathbf{z}$ é sorteado em torno de $\boldsymbol{\mu}$, mas o sorteio
-fica todo no $\boldsymbol{\varepsilon}$, que não depende de nenhum peso:
+**Reparametrização.** O $\mathbf{z}$ é sorteado em torno de $\mu$, mas o sorteio
+fica todo no $\varepsilon$, que não depende de nenhum peso:
 
 ```python
 def reparameterize(self, mu, logvar):
@@ -136,7 +136,7 @@ def reparameterize(self, mu, logvar):
     return z
 ```
 
-Assim, $\mathbf{z}$ é uma conta comum com $\boldsymbol{\mu}$ e $\boldsymbol{\sigma}$, e o
+Assim, $\mathbf{z}$ é uma conta comum com $\mu$ e $\sigma$, e o
 gradiente consegue passar por ela até o encoder.
 
 **Loss.** A função devolve os dois termos separados, em nats por imagem:
@@ -158,7 +158,7 @@ def vae_loss(x_hat, x, mu, logvar):
 Como verificação, com o modelo ainda sem treino e 4 imagens de treino, a reconstrução foi
 **544.72 nats** e a KL **0.04 nats**. A reconstrução é próxima de $784 \cdot \ln 2 \approx 543$,
 o valor de um modelo que prevê 0.5 em todos os pixels, e a KL é pequena porque no início
-$\boldsymbol{\mu} \approx 0$ e $\boldsymbol{\sigma} \approx 1$.
+$\mu \approx 0$ e $\sigma \approx 1$.
 
 ### C — Train
 
@@ -216,18 +216,18 @@ validação é medida já no fim da época.
 !!! question "Enunciado"
 
     Produza a Figura 2: a primeira imagem de teste de cada dígito 0–9 na linha de cima e a
-    sua reconstrução na linha de baixo, decodificando $\boldsymbol{\mu}$ (sem sortear
+    sua reconstrução na linha de baixo, decodificando $\mu$ (sem sortear
     $\mathbf{z}$). Produza a Figura 3: uma grade $8 \times 8$ de imagens decodificadas de
     $\mathbf{z} \sim \mathcal{N}(0, I)$, sorteadas depois de `torch.manual_seed(0)`.
 
 Na Figura 2, as primeiras imagens de teste de cada dígito, de 0 a 9, estão nos índices
 **3, 2, 1, 18, 4, 8, 11, 0, 61 e 7**. Cada imagem passa pelo `encode` e o decoder recebe
-diretamente o $\boldsymbol{\mu}$, sem passar pelo `reparameterize`.
+diretamente o $\mu$, sem passar pelo `reparameterize`.
 
 ![Figura 2](figures/fig02-reconstructions.png)
 /// caption
 **Figura 2** — Primeira imagem de teste de cada dígito (em cima) e a reconstrução obtida
-decodificando $\boldsymbol{\mu}$ (embaixo), $d = 16$.
+decodificando $\mu$ (embaixo), $d = 16$.
 ///
 
 Na Figura 3, o encoder não é usado: depois de `torch.manual_seed(0)`, 64 vetores
@@ -254,7 +254,7 @@ algumas que não são dígito nenhum.
     2. A Figura 3 parece pior que a Figura 2: dígitos mais borrados, alguns que não são
        dígito nenhum. Dê duas razões separadas, uma sobre onde as amostras do prior caem no
        espaço latente e outra sobre o que o decoder produz para um dado $\mathbf{z}$.
-    3. Por que decodificar $\boldsymbol{\mu}$, e não um $\mathbf{z}$ sorteado, na Figura 2?
+    3. Por que decodificar $\mu$, e não um $\mathbf{z}$ sorteado, na Figura 2?
 
 !!! warning "A preencher"
 

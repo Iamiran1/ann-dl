@@ -3,3 +3,6 @@ env/
 .cache/
 .vscode/
 target/
+# MNIST baixado pelo torchvision (exercício VAE)
+data/
+Claude outputs/

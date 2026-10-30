@@ -130,69 +130,72 @@ def train_vae(d, epochs=20, batch_size=128, lr=1e-3):
     return model, hist
 
 
-model, hist = train_vae(d=16)
+# só treina e gera as figuras quando o script é rodado diretamente;
+# assim o ex2_vae.py pode importar VAE, train_vae, evaluate e os dados sem retreinar tudo
+if __name__ == "__main__":
+    model, hist = train_vae(d=16)
 
-# C — números finais no teste (a única vez em que o teste é usado)
-test_recon, test_kl = evaluate(model, X_test)
-print(f"teste (d=16): recon {test_recon:.2f}  KL {test_kl:.2f}  "
-      f"-ELBO {test_recon + test_kl:.2f} nats/imagem")
-print(f"validação KL: 1ª época {hist['val_kl'][0]:.2f}, última época {hist['val_kl'][-1]:.2f}")
+    # C — números finais no teste (a única vez em que o teste é usado)
+    test_recon, test_kl = evaluate(model, X_test)
+    print(f"teste (d=16): recon {test_recon:.2f}  KL {test_kl:.2f}  "
+          f"-ELBO {test_recon + test_kl:.2f} nats/imagem")
+    print(f"validação KL: 1ª época {hist['val_kl'][0]:.2f}, última época {hist['val_kl'][-1]:.2f}")
 
-# Figura 1 — os dois termos da loss por época, treino e validação
-epochs = range(1, len(hist["train_recon"]) + 1)
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4))
-ax1.plot(epochs, hist["train_recon"], marker="o", label="Treino")
-ax1.plot(epochs, hist["val_recon"], marker="o", label="Validação")
-ax1.set_title("Reconstrução (BCE) por época")
-ax1.set_xlabel("Época")
-ax1.set_ylabel("Reconstrução (nats/imagem)")
-ax1.legend()
-ax2.plot(epochs, hist["train_kl"], marker="o", label="Treino")
-ax2.plot(epochs, hist["val_kl"], marker="o", label="Validação")
-ax2.set_title("KL por época")
-ax2.set_xlabel("Época")
-ax2.set_ylabel("KL (nats/imagem)")
-ax2.legend()
-for ax in (ax1, ax2):
-    ax.set_xticks(range(2, len(epochs) + 1, 2))  # épocas inteiras no eixo x
-fig.suptitle("Figura 1 — Termos da loss do VAE (d = 16)")
-fig.tight_layout()
-fig.savefig(FIGURES / "fig01-loss-terms.png", dpi=150)
-plt.close(fig)
+    # Figura 1 — os dois termos da loss por época, treino e validação
+    epochs = range(1, len(hist["train_recon"]) + 1)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4))
+    ax1.plot(epochs, hist["train_recon"], marker="o", label="Treino")
+    ax1.plot(epochs, hist["val_recon"], marker="o", label="Validação")
+    ax1.set_title("Reconstrução (BCE) por época")
+    ax1.set_xlabel("Época")
+    ax1.set_ylabel("Reconstrução (nats/imagem)")
+    ax1.legend()
+    ax2.plot(epochs, hist["train_kl"], marker="o", label="Treino")
+    ax2.plot(epochs, hist["val_kl"], marker="o", label="Validação")
+    ax2.set_title("KL por época")
+    ax2.set_xlabel("Época")
+    ax2.set_ylabel("KL (nats/imagem)")
+    ax2.legend()
+    for ax in (ax1, ax2):
+        ax.set_xticks(range(2, len(epochs) + 1, 2))  # épocas inteiras no eixo x
+    fig.suptitle("Figura 1 — Termos da loss do VAE (d = 16)")
+    fig.tight_layout()
+    fig.savefig(FIGURES / "fig01-loss-terms.png", dpi=150)
+    plt.close(fig)
 
-# D — Figura 2: primeira imagem de teste de cada dígito e sua reconstrução
-model.eval()
-first_idx = [int((y_test == digit).nonzero()[0]) for digit in range(10)]
-print("índices de teste da Figura 2:", first_idx)
-with torch.no_grad():
-    mu, _ = model.encode(X_test[first_idx])
-    recon_imgs = model.decoder(mu)  # decodifica μ, sem sortear z
+    # D — Figura 2: primeira imagem de teste de cada dígito e sua reconstrução
+    model.eval()
+    first_idx = [int((y_test == digit).nonzero()[0]) for digit in range(10)]
+    print("índices de teste da Figura 2:", first_idx)
+    with torch.no_grad():
+        mu, _ = model.encode(X_test[first_idx])
+        recon_imgs = model.decoder(mu)  # decodifica μ, sem sortear z
 
-fig, axes = plt.subplots(2, 10, figsize=(12, 3))
-for col in range(10):
-    axes[0, col].imshow(X_test[first_idx[col]].view(28, 28), cmap="gray")
-    axes[1, col].imshow(recon_imgs[col].view(28, 28), cmap="gray")
-    axes[0, col].set_title(str(col))
-    for row in range(2):
-        axes[row, col].set_xticks([])
-        axes[row, col].set_yticks([])
-axes[0, 0].set_ylabel("Original")
-axes[1, 0].set_ylabel("Reconstrução")
-fig.suptitle("Figura 2 — Primeira imagem de teste de cada dígito e sua reconstrução (decoder(μ), d = 16)")
-fig.savefig(FIGURES / "fig02-reconstructions.png", dpi=150, bbox_inches="tight")
-plt.close(fig)
+    fig, axes = plt.subplots(2, 10, figsize=(12, 3))
+    for col in range(10):
+        axes[0, col].imshow(X_test[first_idx[col]].view(28, 28), cmap="gray")
+        axes[1, col].imshow(recon_imgs[col].view(28, 28), cmap="gray")
+        axes[0, col].set_title(str(col))
+        for row in range(2):
+            axes[row, col].set_xticks([])
+            axes[row, col].set_yticks([])
+    axes[0, 0].set_ylabel("Original")
+    axes[1, 0].set_ylabel("Reconstrução")
+    fig.suptitle("Figura 2 — Primeira imagem de teste de cada dígito e sua reconstrução (decoder(μ), d = 16)")
+    fig.savefig(FIGURES / "fig02-reconstructions.png", dpi=150, bbox_inches="tight")
+    plt.close(fig)
 
-# D — Figura 3: 8x8 imagens geradas a partir de z ~ N(0, I)
-torch.manual_seed(0)
-with torch.no_grad():
-    z = torch.randn(64, 16)          # sorteio do prior, escrito à mão
-    samples = model.decoder(z)
+    # D — Figura 3: 8x8 imagens geradas a partir de z ~ N(0, I)
+    torch.manual_seed(0)
+    with torch.no_grad():
+        z = torch.randn(64, 16)          # sorteio do prior, escrito à mão
+        samples = model.decoder(z)
 
-fig, axes = plt.subplots(8, 8, figsize=(8, 8))
-for ax, img in zip(axes.flat, samples):
-    ax.imshow(img.view(28, 28), cmap="gray")
-    ax.axis("off")
-fig.suptitle("Figura 3 — 64 amostras do prior z ~ N(0, I) decodificadas (d = 16)")
-fig.savefig(FIGURES / "fig03-prior-samples.png", dpi=150, bbox_inches="tight")
-plt.close(fig)
+    fig, axes = plt.subplots(8, 8, figsize=(8, 8))
+    for ax, img in zip(axes.flat, samples):
+        ax.imshow(img.view(28, 28), cmap="gray")
+        ax.axis("off")
+    fig.suptitle("Figura 3 — 64 amostras do prior z ~ N(0, I) decodificadas (d = 16)")
+    fig.savefig(FIGURES / "fig03-prior-samples.png", dpi=150, bbox_inches="tight")
+    plt.close(fig)
 

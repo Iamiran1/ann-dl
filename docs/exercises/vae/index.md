@@ -264,15 +264,97 @@ algumas que não são dígito nenhum.
 
 ## Exercise 2 — A Latent Space You Can See
 
+O Exercise 2 está em `ex2_vae.py`, que importa do Exercise 1 a classe `VAE`, `train_vae`,
+`evaluate` e os dados já achatados. No `ex1_vae.py`, o treino e as figuras ficam dentro de
+`if __name__ == "__main__":`, então importar o arquivo não retreina nada.
+
+??? example "Ver o código completo do Exercise 2"
+
+    ```{ .python .copy .select linenums='1' title="docs/exercises/vae/code/ex2_vae.py" }
+    --8<-- "docs/exercises/vae/code/ex2_vae.py"
+    ```
+
 ### A — Train a 2-D VAE
+
+!!! question "Enunciado"
+
+    Treine o mesmo modelo do Exercise 1, mudando apenas $d = 2$. Mesmos dados, semente,
+    $\beta$ e orçamento de treino. Reporte a reconstrução e a KL no teste ao lado dos números
+    de $d = 16$.
+
+O modelo é o mesmo, chamado com `train_vae(d=2)`: a única diferença é que as duas cabeças e
+a primeira camada do decoder passam a ter 2 saídas/entradas em vez de 16.
+
+!!! warning "A preencher"
+
+    Tabela $d = 16$ × $d = 2$ (reconstrução, KL e ELBO negativo no teste).
 
 ### B — The encoded test set
 
+!!! question "Enunciado"
+
+    Produza a Figura 4: um gráfico de dispersão de $\mu$ para as 10 000 imagens de teste,
+    colorido por dígito, com legenda.
+
+Cada imagem de teste passa pelo `encode` do modelo $d = 2$, e o ponto desenhado é o seu
+$\mu$ (sem sortear $\mathbf{z}$).
+
+![Figura 4](figures/fig04-latent-scatter.png)
+/// caption
+**Figura 4** — $\mu$ das 10 000 imagens de teste no espaço latente de $d = 2$, colorido pelo
+dígito.
+///
+
 ### C — The decoded plane
+
+!!! question "Enunciado"
+
+    Produza a Figura 5: decodifique uma grade $15 \times 15$ de pontos latentes,
+    $z = \Phi^{-1}(q)$, com $q$ em 15 valores igualmente espaçados em $[0.05, 0.95]$.
+    Diga em uma frase por que esse espaçamento dá a cada célula a mesma massa do prior.
+
+![Figura 5](figures/fig05-latent-plane.png)
+/// caption
+**Figura 5** — Grade $15 \times 15$ de pontos $\mathbf{z} = (\Phi^{-1}(q_1), \Phi^{-1}(q_2))$
+decodificados pelo modelo $d = 2$.
+///
+
+!!! warning "A preencher"
+
+    A frase sobre a massa do prior.
 
 ### D — Interpolation
 
+!!! question "Enunciado"
+
+    Escolha duas imagens de teste de dígitos diferentes e reporte os índices. Figura 6: duas
+    linhas de 10 imagens, $t$ de 0 a 1. Em cima, nos pixels: $(1-t)\,x_a + t\,x_b$. Embaixo,
+    no espaço latente do modelo $d = 16$: decodifique $(1-t)\,\mu_a + t\,\mu_b$.
+
+!!! warning "A preencher"
+
+    Índices escolhidos e descrição da Figura 6.
+
+![Figura 6](figures/fig06-interpolation.png)
+/// caption
+**Figura 6** — Interpolação entre duas imagens de teste: mistura direta dos pixels (em
+cima) e caminho reto entre os $\mu$ do modelo $d = 16$, decodificado (embaixo).
+///
+
 ### E — Analysis
+
+!!! question "Enunciado"
+
+    1. Quais dígitos se sobrepõem na Figura 4? Encontre a mesma transição na Figura 5 e
+       descreva as imagens do meio do caminho.
+    2. $d = 2$ reconstrói claramente pior que $d = 16$. O que dois números por imagem obrigam
+       o modelo a jogar fora? Use a Figura 5 como evidência.
+    3. Compare as duas linhas da Figura 6. Qual delas passa por imagens que parecem dígitos e
+       por que a outra não passa?
+
+!!! warning "A preencher"
+
+    Respostas da análise do Exercise 2.
 
 ---
 

@@ -6,3 +6,4 @@ target/
 # MNIST baixado pelo torchvision (exercício VAE)
 data/
 Claude outputs/
+.ipynb_checkpoints/

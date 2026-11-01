@@ -143,3 +143,37 @@ fig.suptitle(f"Figura 6 — Interpolação entre as imagens de teste {IDX_A} e {
              "em pixels (cima) e no espaço latente (baixo)", y=1.06)
 fig.savefig(FIGURES / "fig06-interpolation.png", dpi=150, bbox_inches="tight")
 plt.close(fig)
+
+
+# ---------------------------------------------------------------------------
+# E — o que d = 2 joga fora: medidas de estilo, original × reconstrução (decoder(μ))
+# ---------------------------------------------------------------------------
+def medidas_estilo(X):
+    """Tinta (espessura), largura e inclinação de cada imagem, pelos momentos dos pixels."""
+    X = X.reshape(-1, 28, 28)
+    yy, xx = np.mgrid[0:28, 0:28]
+    m = X.sum(axis=(1, 2)) + 1e-8                       # tinta: soma dos pixels
+    cx = (X * xx).sum(axis=(1, 2)) / m
+    cy = (X * yy).sum(axis=(1, 2)) / m
+    dx, dy = xx[None] - cx[:, None, None], yy[None] - cy[:, None, None]
+    vx = (X * dx**2).sum(axis=(1, 2)) / m
+    vy = (X * dy**2).sum(axis=(1, 2)) / m
+    cxy = (X * dx * dy).sum(axis=(1, 2)) / m
+    return {"tinta": m, "largura": np.sqrt(vx), "inclinação": cxy / vy}
+
+
+def pct_cinza(X):
+    """Porcentagem de pixels entre 0.2 e 0.8: quanto maior, mais borrada a imagem."""
+    return np.mean((X > 0.2) & (X < 0.8))
+
+
+orig = X_test.numpy()
+med_orig = medidas_estilo(orig)
+print(f"pixels cinza: original {pct_cinza(orig):.1%}")
+for nome, modelo in [("d=16", model16), ("d=2", model2)]:
+    with torch.no_grad():
+        m_, _ = modelo.encode(X_test)
+        rec = modelo.decoder(m_).numpy()
+    med_rec = medidas_estilo(rec)
+    corr = "  ".join(f"{k} r={np.corrcoef(med_orig[k], med_rec[k])[0, 1]:.2f}" for k in med_orig)
+    print(f"{nome}: {corr}  pixels cinza {pct_cinza(rec):.1%}")

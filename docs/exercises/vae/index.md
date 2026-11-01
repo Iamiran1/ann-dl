@@ -282,12 +282,24 @@ O Exercise 2 está em `ex2_vae.py`, que importa do Exercise 1 a classe `VAE`, `t
     $\beta$ e orçamento de treino. Reporte a reconstrução e a KL no teste ao lado dos números
     de $d = 16$.
 
-O modelo é o mesmo, chamado com `train_vae(d=2)`: a única diferença é que as duas cabeças e
-a primeira camada do decoder passam a ter 2 saídas/entradas em vez de 16.
+O modelo é o mesmo, chamado com `train_vae(d=2)`: as duas cabeças passam a ter 2 saídas e a
+primeira camada do decoder, 2 entradas. Dados, `torch.manual_seed(42)`, $\beta = 1$, Adam com
+$10^{-3}$, batch 128 e 20 épocas são os do Exercise 1. O script também treina de novo o
+modelo $d = 16$ (usado na Figura 6); como `train_vae` fixa a semente antes de criar o modelo,
+ele é o mesmo do Exercise 1.
 
-!!! warning "A preencher"
+**Números no teste, em nats por imagem:**
 
-    Tabela $d = 16$ × $d = 2$ (reconstrução, KL e ELBO negativo no teste).
+| | $d = 16$ (Exercise 1) | $d = 2$ | Diferença |
+|---|---:|---:|---:|
+| Reconstrução | 80.82 | **135.61** | +54.79 |
+| KL | 19.96 | **6.52** | −13.44 |
+| ELBO negativo | 100.78 | **142.12** | +41.34 |
+
+Os valores de $d = 2$ ficam perto da referência do enunciado (cerca de 135 e 7). Com só duas
+dimensões, o modelo paga 13 nats a menos de KL, mas a reconstrução piora 55 nats, e o saldo
+é um ELBO negativo 41 nats pior. Na validação, a reconstrução de $d = 2$ terminou a época 20
+em 135.75 e a KL em 6.52, sem sinal de *overfitting*.
 
 ### B — The encoded test set
 
@@ -305,6 +317,12 @@ $\mu$ (sem sortear $\mathbf{z}$).
 dígito.
 ///
 
+Quase todos os pontos ficam a menos de 3 unidades da origem, que é onde o prior
+$\mathcal{N}(0, I)$ tem quase toda a massa: é o efeito da KL. Os dígitos 0 (à esquerda), 1
+(à direita) e 7 (em cima) formam grupos bem separados. No centro, vários dígitos se encostam:
+4 e 9 praticamente se sobrepõem em $\mu \approx (0.2,\ 0.6)$, e 3, 5 e 8 dividem a região
+de baixo. Isso é analisado no item E.
+
 ### C — The decoded plane
 
 !!! question "Enunciado"
@@ -313,15 +331,27 @@ dígito.
     $z = \Phi^{-1}(q)$, com $q$ em 15 valores igualmente espaçados em $[0.05, 0.95]$.
     Diga em uma frase por que esse espaçamento dá a cada célula a mesma massa do prior.
 
+Os 15 valores de $q$ vão de 0.05 a 0.95 de 0.0643 em 0.0643, e `norm.ppf` os transforma em
+$z \in \{-1.64, -1.20, -0.92, \dots, 0.92, 1.20, 1.64\}$. Cada par
+$(z_1, z_2)$ da grade passa pelo decoder do modelo $d = 2$; $z_2$ cresce de baixo para cima,
+como nos eixos da Figura 4.
+
 ![Figura 5](figures/fig05-latent-plane.png)
 /// caption
 **Figura 5** — Grade $15 \times 15$ de pontos $\mathbf{z} = (\Phi^{-1}(q_1), \Phi^{-1}(q_2))$
 decodificados pelo modelo $d = 2$.
 ///
 
-!!! warning "A preencher"
+**Por que a grade em quantis:** como $\Phi$ é a CDF da $\mathcal{N}(0, 1)$, a probabilidade
+do prior entre dois valores vizinhos da grade é
+$\Phi(z_{k+1}) - \Phi(z_k) = q_{k+1} - q_k = 0.9/14 \approx 0.064$ em cada eixo, e como o
+prior é o produto de duas normais independentes, cada célula da grade recebe a mesma massa,
+$(0.9/14)^2 \approx 0.004$ — os pontos ficam mais juntos no centro, onde o prior tem mais
+densidade, e mais espaçados nas bordas.
 
-    A frase sobre a massa do prior.
+O plano mostra a mesma organização da Figura 4: 0 à esquerda, 1 à direita, 7 em cima e 3/5
+embaixo, com 6, 2, 8, 4 e 9 no meio. Não há células vazias: todo ponto do quadrado decodifica
+em algo com cara de dígito, inclusive entre os grupos.
 
 ### D — Interpolation
 
@@ -331,14 +361,22 @@ decodificados pelo modelo $d = 2$.
     linhas de 10 imagens, $t$ de 0 a 1. Em cima, nos pixels: $(1-t)\,x_a + t\,x_b$. Embaixo,
     no espaço latente do modelo $d = 16$: decodifique $(1-t)\,\mu_a + t\,\mu_b$.
 
-!!! warning "A preencher"
+As imagens escolhidas são a de **índice 4** do teste (um **4**) e a de **índice 0** (um
+**7**), as primeiras de cada um desses dígitos no conjunto de teste (as mesmas da Figura 2).
+O $t$ percorre 10 valores igualmente espaçados de 0 a 1. A linha de baixo usa o modelo
+$d = 16$: as duas imagens passam pelo `encode`, o caminho é feito entre os dois $\mu$ e cada
+ponto do caminho passa pelo decoder.
 
-    Índices escolhidos e descrição da Figura 6.
+```python
+pixel_row = [(1 - t) * x_a + t * x_b for t in ts]              # mistura dos pixels
+z_path = torch.stack([(1 - t) * mu_a + t * mu_b for t in ts])  # caminho entre os μ
+latent_row = model16.decoder(z_path)
+```
 
 ![Figura 6](figures/fig06-interpolation.png)
 /// caption
-**Figura 6** — Interpolação entre duas imagens de teste: mistura direta dos pixels (em
-cima) e caminho reto entre os $\mu$ do modelo $d = 16$, decodificado (embaixo).
+**Figura 6** — Interpolação entre a imagem de teste 4 (um 4) e a 0 (um 7): mistura direta dos
+pixels (em cima) e caminho reto entre os $\mu$ do modelo $d = 16$, decodificado (embaixo).
 ///
 
 ### E — Analysis
@@ -352,9 +390,60 @@ cima) e caminho reto entre os $\mu$ do modelo $d = 16$, decodificado (embaixo).
     3. Compare as duas linhas da Figura 6. Qual delas passa por imagens que parecem dígitos e
        por que a outra não passa?
 
-!!! warning "A preencher"
+**1. Sobreposições.** Para medir a sobreposição, e não só olhar, classifiquei o $\mu$ de cada
+imagem de teste pelos seus 15 vizinhos mais próximos entre os $\mu$ da validação (k-NN). No
+plano de $d = 2$ ele acerta **79.8%**, contra **94.9%** usando os $\mu$ de $d = 16$. Os pares
+que ele mais confunde, somando os dois sentidos, são **4/9 (548 imagens)**, **3/5 (371)**,
+3/8 (176), 7/9 (164) e 5/8 (155). O par 4/9 é o pior: os centros dos dois grupos na
+Figura 4 são $(0.18,\ 0.59)$ e $(0.31,\ 0.59)$, a 0.13 de distância.
 
-    Respostas da análise do Exercise 2.
+Na Figura 5, essa transição aparece na faixa de cima, em $z_2 \approx 0.7$–$0.9$: andando
+da esquerda para a direita, as células passam de 4 para 9 entre $z_1 \approx -0.2$ e $0$.
+As imagens do meio do caminho são um 4 cujo topo vai se fechando: os dois traços de cima se
+aproximam até formar a laçada do 9, e nas células de transição o topo fica borrado, meio
+aberto e meio fechado, e não dá para dizer qual dos dois é. Isso faz sentido: um 4 escrito com
+o topo fechado *é* quase um 9, então o modelo coloca os dois no mesmo lugar. O mesmo acontece
+com 3 e 5 na faixa de baixo ($z_2 = -1.64$): o traço de cima do 5 vai se curvando até virar
+a curva superior do 3, e as células do meio, em $z_1 \approx -0.5$, ficam entre os dois.
+
+**2. O que $d = 2$ joga fora.** A KL mede quanta informação o código carrega sobre a imagem.
+Com $d = 2$ ela é 6.52 nats, cerca de 3.3 por dimensão; com $d = 16$, 19.96 nats, espalhados
+em 11 das 16 dimensões (as outras 5 ficam com KL abaixo de 0.1 nat, sem uso). Dois números
+não têm espaço para a identidade do dígito **e** o estilo de escrita ao mesmo tempo, e o
+modelo gasta quase tudo na identidade, que é o que mais reduz o erro de reconstrução. O que
+vai embora é o estilo: espessura do traço, largura, inclinação, laçadas, serifas e detalhes de
+cada pessoa.
+
+A Figura 5 mostra isso de três formas:
+
+- cada dígito aparece numa versão "média", com traço de espessura parecida em toda a grade:
+  não existe um 8 grosso e um 8 fino, nem um 7 com e outro sem o tracinho no meio;
+- a pouca variação de estilo que sobra é a que coincide com a direção em que o grupo se
+  espalha no plano: na coluna da direita, os 1 só mudam de inclinação, de vertical (em cima) a
+  bem inclinado (embaixo); e na coluna da esquerda, os 0 só mudam de largura;
+- as células de transição são borradas: como o código não guarda detalhes, o decoder
+  devolve a média das imagens que caem naquele ponto, e a média de um 4 e de um 9, ou de um 3
+  e de um 5, é uma mancha.
+
+E mesmo a identidade se perde em parte: os 548 pares 4/9 confundidos do item 1 são imagens
+cujo código simplesmente não diz qual dos dois dígitos é. Os 55 nats a mais de reconstrução
+são o preço desse estilo e dessa identidade que não cabem em dois números.
+
+**3. As duas interpolações.** Só a linha de baixo, a do espaço latente, passa por imagens que
+parecem dígitos. Na de cima, cada imagem do meio é o 4 e o 7 ao mesmo tempo, os dois
+semitransparentes: em $t = 0.44$ e $t = 0.56$ aparecem as duas hastes verticais e os dois
+topos, em cinza. Isso porque somar pixels não sabe nada de dígitos: a média de duas imagens
+de dígito não é uma imagem de dígito.
+
+A de baixo nunca mostra dois traços sobrepostos, e todo quadro tem um traço só, com
+intensidade cheia: o 4 fecha o topo e vira um **9** ($t \approx 0.33$–$0.56$), e a laçada do
+9 se abre na barra do 7 ($t \geq 0.67$). Ela passa por um 9 porque, no espaço latente, o 9 fica
+entre o 4 e o 7, a mesma vizinhança 4–9–7 da parte de cima das Figuras 4 e 5. Funciona
+porque cada quadro é **gerado** pelo decoder a partir de um código, não misturado. E a KL é
+o que garante que os códigos entre $\mu_a$ e $\mu_b$ decodificam em algo plausível: ela puxa
+todas as gaussianas para o prior, então elas se sobrepõem e preenchem o espaço entre as
+imagens de treino. Num autoencoder comum, esse caminho poderia passar por um "buraco" que o
+decoder nunca viu.
 
 ---
 
@@ -364,5 +453,5 @@ cima) e caminho reto entre os $\mu$ do modelo $d = 16$, decodificado (embaixo).
 |---|----------|-------|
 | 1 | Ex. 1 — test reconstruction, KL and negative ELBO ($d = 16$) | reconstrução 80.82; KL 19.96; ELBO negativo 100.78 nats/imagem |
 | 2 | Ex. 1 — validation KL at the first and at the last epoch | 12.45 (época 1) e 19.92 (época 20) nats/imagem |
-| 3 | Ex. 2 — test reconstruction and KL ($d = 2$) | |
-| 4 | Ex. 2 — the two test indices interpolated | |
+| 3 | Ex. 2 — test reconstruction and KL ($d = 2$) | reconstrução 135.61; KL 6.52 nats/imagem (ELBO negativo 142.12) |
+| 4 | Ex. 2 — the two test indices interpolated | índice 4 (dígito 4) e índice 0 (dígito 7) |

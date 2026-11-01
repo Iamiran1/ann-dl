@@ -1,0 +1,28 @@
+/* Legendas das figuras alinhadas à esquerda, na largura da figura
+   (o Material centraliza e limita a largura por padrão) */
+.md-typeset figure figcaption {
+  max-width: 100%;
+  text-align: left;
+  margin-top: 0.5em;
+  font-style: normal;
+  font-size: 0.85em;
+  color: var(--md-default-fg-color--light);
+}
+
+/* Títulos de exercício (h2): maiores, com linha embaixo */
+.md-typeset h2 {
+  font-weight: 700;
+  margin-top: 2.4em;
+  padding-bottom: 0.3em;
+  border-bottom: 2px solid var(--md-accent-fg-color);
+}
+
+/* Títulos de item (h3: A, B, C...): faixa com barra à esquerda */
+.md-typeset h3 {
+  font-weight: 700;
+  margin-top: 2.2em;
+  padding: 0.45em 0.8em;
+  border-left: 4px solid var(--md-accent-fg-color);
+  border-radius: 0 0.2rem 0.2rem 0;
+  background: var(--md-accent-fg-color--transparent);
+}

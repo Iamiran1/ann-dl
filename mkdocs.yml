@@ -131,6 +131,12 @@ extra_javascript:
   # A configuração precisa vir ANTES da biblioteca do MathJax
   - javascripts/mathjax.js
   - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+  # Carrossel de slides (div class="slides"), usado no passo a passo do VAE
+  - javascripts/slides.js
+
+extra_css:
+  - stylesheets/extra.css
+  - stylesheets/slides.css
 
 # =============================================================================
 #  NAVEGAÇÃO — uma entrega, um item de menu.

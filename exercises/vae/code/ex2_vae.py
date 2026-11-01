@@ -5,7 +5,10 @@ from scipy.stats import norm
 
 # reaproveita do Exercise 1: dados já achatados, a classe VAE, o treino e a avaliação
 # (o ex1_vae.py só treina quando é rodado diretamente, então importar não retreina nada)
-from ex1_vae import VAE, train_vae, evaluate, X_test, y_test, FIGURES
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import confusion_matrix
+
+from ex1_vae import VAE, train_vae, evaluate, X_val, y_val, X_test, y_test, FIGURES
 
 # ---------------------------------------------------------------------------
 # A — VAE 2-D: mesmo modelo, dados, semente, β e orçamento; só muda d
@@ -48,6 +51,38 @@ for digit in range(10):
     c = mu_test[labels == digit].mean(axis=0)
     print(f"dígito {digit}: centro de μ = ({c[0]:+.2f}, {c[1]:+.2f})")
 
+# quanto os dígitos se misturam no plano: um k-NN (k = 15) "ajustado" nos μ da validação
+# classifica os μ de teste pelos vizinhos. Os pares que ele mais confunde são os pares
+# que se sobrepõem na Figura 4. O mesmo teste no latente de 16 dimensões serve de comparação.
+with torch.no_grad():
+    mu_val2, _ = model2.encode(X_val)
+    mu_val16, _ = model16.encode(X_val)
+    mu_test16, logvar_test16 = model16.encode(X_test)
+    _, logvar_test2 = model2.encode(X_test)
+
+knn2 = KNeighborsClassifier(n_neighbors=15).fit(mu_val2.numpy(), y_val.numpy())
+pred2 = knn2.predict(mu_test)
+knn16 = KNeighborsClassifier(n_neighbors=15).fit(mu_val16.numpy(), y_val.numpy())
+pred16 = knn16.predict(mu_test16.numpy())
+print(f"k-NN nos μ: acerto {np.mean(pred2 == labels):.1%} (d=2) × {np.mean(pred16 == labels):.1%} (d=16)")
+
+conf = confusion_matrix(labels, pred2)
+np.fill_diagonal(conf, 0)
+mix = conf + conf.T  # confusões nos dois sentidos (a→b e b→a)
+pares = sorted(((mix[a, b], a, b) for a in range(10) for b in range(a + 1, 10)), reverse=True)
+print("pares mais misturados no plano (d=2):",
+      ", ".join(f"{a}/{b}: {n}" for n, a, b in pares[:5]))
+
+# KL média por dimensão no teste: mostra quantas dimensões cada modelo de fato usa
+def kl_por_dim(mu, logvar):
+    return (0.5 * (mu.pow(2) + logvar.exp() - 1 - logvar)).mean(dim=0)
+
+kl_dim2 = kl_por_dim(torch.from_numpy(mu_test), logvar_test2)
+kl_dim16 = kl_por_dim(mu_test16, logvar_test16)
+print("KL por dimensão (d=2): ", np.round(kl_dim2.numpy(), 2))
+print("KL por dimensão (d=16):", np.round(kl_dim16.numpy(), 2),
+      f"-> {int((kl_dim16 > 0.1).sum())} de 16 dimensões com KL > 0.1 nat")
+
 # ---------------------------------------------------------------------------
 # C — Figura 5: plano decodificado numa grade 15×15 em quantis do prior
 # ---------------------------------------------------------------------------
@@ -81,7 +116,7 @@ plt.close(fig)
 # ---------------------------------------------------------------------------
 # D — Figura 6: interpolação em pixels × no latente (com o modelo d = 16)
 # ---------------------------------------------------------------------------
-IDX_A, IDX_B = 3, 2  # índices de teste escolhidos (dígitos diferentes)
+IDX_A, IDX_B = 4, 0  # índices de teste escolhidos: um 4 e um 7 (dígitos diferentes)
 x_a, x_b = X_test[IDX_A], X_test[IDX_B]
 print(f"interpolação: índice {IDX_A} (dígito {y_test[IDX_A].item()}) -> "
       f"índice {IDX_B} (dígito {y_test[IDX_B].item()})")
@@ -105,6 +140,6 @@ for col, t in enumerate(ts):
 axes[0, 0].set_ylabel("Pixels")
 axes[1, 0].set_ylabel("Latente\n(d = 16)")
 fig.suptitle(f"Figura 6 — Interpolação entre as imagens de teste {IDX_A} e {IDX_B}: "
-             "em pixels (cima) e no espaço latente (baixo)")
+             "em pixels (cima) e no espaço latente (baixo)", y=1.06)
 fig.savefig(FIGURES / "fig06-interpolation.png", dpi=150, bbox_inches="tight")
 plt.close(fig)

@@ -720,9 +720,41 @@ apareciam misturados.
        espaço latente e outra sobre o que o decoder produz para um dado $\mathbf{z}$.
     3. Por que decodificar $\mu$, e não um $\mathbf{z}$ sorteado, na Figura 2?
 
-!!! warning "A preencher"
+**1. Por que a KL sobe.** No início do treino, o encoder devolve $\mu \approx 0$ e
+$\sigma \approx 1$ para qualquer imagem: o código é igual ao prior, a KL é quase zero, mas o
+código não carrega nenhuma informação, e a reconstrução é péssima. Para reconstruir melhor, o
+encoder precisa afastar os $\mu$ de zero (cada dígito num lugar) e encolher os $\sigma$
+(códigos precisos), e é exatamente isso que a KL cobra. O otimizador aceita pagar porque só
+olha a soma, e no começo a troca é muito favorável: entre as épocas 1 e 5, a KL de treino
+subiu 11 nats (de 6.83 para 17.86), mas a reconstrução caiu 83 nats (de 175.96 para 93.00), e
+a loss total caiu 72. A KL estabiliza perto de 20 nats quando guardar mais um detalhe no
+código já custaria mais KL do que economizaria em reconstrução.
 
-    Respostas da análise do Exercise 1.
+**2. Por que a Figura 3 parece pior que a Figura 2.**
+
+- **Onde as amostras caem.** Na Figura 2, o decoder recebe o $\mu$ de uma imagem real, que cai
+  numa região onde ele treinou com muitas imagens. Na Figura 3, o $\mathbf{z}$ é sorteado do
+  prior sem olhar para os dados. A KL puxa os códigos para dentro do prior, mas eles não o
+  cobrem por igual (o bônus da Figura A4 mostra nuvens separadas por dígito), e um
+  $\mathbf{z}$ que cai entre as nuvens ou num canto pouco visitado decodifica em algo que não
+  é dígito, ou numa mistura de dois.
+- **O que o decoder produz.** Para um dado $\mathbf{z}$, o decoder devolve a imagem que erra
+  menos em média entre todas as imagens de treino com código parecido, ou seja, a média delas.
+  A média de vários dígitos nítidos, com traços em posições um pouco diferentes, é borrada. Na
+  Figura 2 isso pesa pouco, porque o $\mu$ de uma imagem real é um código preciso; um
+  $\mathbf{z}$ aleatório cai com mais frequência em regiões ambíguas, onde essa média mistura
+  imagens bem diferentes.
+
+**3. Por que decodificar $\mu$ na Figura 2.** A Figura 2 não gera imagens novas: ela
+reconstrói imagens reais para mostrar o quanto de cada uma sobrevive à compressão em 16
+números. Para isso, o decoder deve receber o melhor código que o encoder tem para a imagem, e
+esse código é o $\mu$, o centro da distribuição que o encoder lhe atribuiu. Um $\mathbf{z}$
+sorteado seria esse mesmo centro somado a um ruído $\sigma \odot \varepsilon$, e a figura
+passaria a mudar a cada execução: um traço borrado poderia ser culpa do modelo ou apenas de um
+$\varepsilon$ que caiu longe, sem como separar uma coisa da outra. O sorteio tem papel só no
+treino, onde obriga o decoder a funcionar em toda a vizinhança de $\mu$ e permite que o
+gradiente passe pela reparametrização; com o modelo já treinado, ele não ensina mais nada e só
+acrescentaria ruído à reconstrução.
 
 ---
 

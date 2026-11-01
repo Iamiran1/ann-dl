@@ -838,12 +838,11 @@ como nos eixos da Figura 4.
 decodificados pelo modelo $d = 2$.
 ///
 
-**Por que a grade em quantis:** como $\Phi$ é a CDF da $\mathcal{N}(0, 1)$, a probabilidade
-do prior entre dois valores vizinhos da grade é
-$\Phi(z_{k+1}) - \Phi(z_k) = q_{k+1} - q_k = 0.9/14 \approx 0.064$ em cada eixo, e como o
-prior é o produto de duas normais independentes, cada célula da grade recebe a mesma massa,
-$(0.9/14)^2 \approx 0.004$ — os pontos ficam mais juntos no centro, onde o prior tem mais
-densidade, e mais espaçados nas bordas.
+**Por que a grade em quantis:** como $\Phi$ é a CDF da $\mathcal{N}(0, 1)$, a massa do prior
+entre dois pontos vizinhos da grade é $\Phi(z_{k+1}) - \Phi(z_k) = q_{k+1} - q_k$, que é igual
+para todos os pares porque os $q$ são igualmente espaçados; como o prior é o produto de duas
+normais independentes, cada célula recebe o produto das massas dos dois eixos,
+$(0.9/14)^2 \approx 0.004$, a mesma para todas.
 
 O plano mostra a mesma organização da Figura 4: 0 à esquerda, 1 à direita, 7 em cima e 3/5
 embaixo, com 6, 2, 8, 4 e 9 no meio. Não há células vazias: todo ponto do quadrado decodifica
@@ -886,60 +885,37 @@ pixels (em cima) e caminho reto entre os $\mu$ do modelo $d = 16$, decodificado 
     3. Compare as duas linhas da Figura 6. Qual delas passa por imagens que parecem dígitos e
        por que a outra não passa?
 
-**1. Sobreposições.** Para medir a sobreposição, e não só olhar, classifiquei o $\mu$ de cada
-imagem de teste pelos seus 15 vizinhos mais próximos entre os $\mu$ da validação (k-NN). No
-plano de $d = 2$ ele acerta **79.8%**, contra **94.9%** usando os $\mu$ de $d = 16$. Os pares
-que ele mais confunde, somando os dois sentidos, são **4/9 (548 imagens)**, **3/5 (371)**,
-3/8 (176), 7/9 (164) e 5/8 (155). O par 4/9 é o pior: os centros dos dois grupos na
-Figura 4 são $(0.18,\ 0.59)$ e $(0.31,\ 0.59)$, a 0.13 de distância.
+**1. Sobreposições.** Na Figura 4, os dígitos que mais se sobrepõem são o **4 e o 9**, cujos
+grupos praticamente coincidem, seguidos de **3, 5 e 8**, que dividem a região de baixo. Um
+k-NN sobre os $\mu$ confirma: os pares mais confundidos são 4/9 (548 imagens) e 3/5 (371). Na
+Figura 5, a transição 4 → 9 aparece na faixa de cima ($z_2 \approx 0.7$–$0.9$), entre
+$z_1 \approx -0.2$ e $0$: as imagens do meio são um 4 cujo topo vai se fechando até formar a
+laçada do 9, borradas e sem dar para dizer qual dos dois dígitos são.
 
-Na Figura 5, essa transição aparece na faixa de cima, em $z_2 \approx 0.7$–$0.9$: andando
-da esquerda para a direita, as células passam de 4 para 9 entre $z_1 \approx -0.2$ e $0$.
-As imagens do meio do caminho são um 4 cujo topo vai se fechando: os dois traços de cima se
-aproximam até formar a laçada do 9, e nas células de transição o topo fica borrado, meio
-aberto e meio fechado, e não dá para dizer qual dos dois é. Isso faz sentido: um 4 escrito com
-o topo fechado *é* quase um 9, então o modelo coloca os dois no mesmo lugar. O mesmo acontece
-com 3 e 5 na faixa de baixo ($z_2 = -1.64$): o traço de cima do 5 vai se curvando até virar
-a curva superior do 3, e as células do meio, em $z_1 \approx -0.5$, ficam entre os dois.
+**2. O que $d = 2$ joga fora.** Com só dois números, o código guarda principalmente qual é o
+dígito e perde o **estilo de escrita**. Isso aparece ao comparar cada imagem de teste com a sua
+reconstrução (decodificando $\mu$) em três medidas de estilo:
 
-**2. O que $d = 2$ joga fora.** A KL mede quanta informação o código carrega sobre a imagem.
-Com $d = 2$ ela é 6.52 nats, cerca de 3.3 por dimensão; com $d = 16$, 19.96 nats, espalhados
-em 11 das 16 dimensões (as outras 5 ficam com KL abaixo de 0.1 nat, sem uso). Dois números
-não têm espaço para a identidade do dígito **e** o estilo de escrita ao mesmo tempo, e o
-modelo gasta quase tudo na identidade, que é o que mais reduz o erro de reconstrução. O que
-vai embora é o estilo: espessura do traço, largura, inclinação, laçadas, serifas e detalhes de
-cada pessoa.
+| Correlação original × reconstrução | $d = 16$ | $d = 2$ |
+|---|---:|---:|
+| Espessura (soma dos pixels) | 0.99 | 0.73 |
+| Largura do traço | 0.99 | 0.93 |
+| Inclinação | 0.99 | 0.91 |
+| Pixels cinza na reconstrução (original: 6.1%) | 9.2% | 18.5% |
 
-A Figura 5 mostra isso de três formas:
+O $d = 16$ preserva as três medidas; o $d = 2$ perde sobretudo a espessura, parte da largura e
+da inclinação, e dobra a quantidade de pixels cinza, ou seja, borra. A Figura 5 mostra o mesmo:
+cada dígito aparece numa única versão genérica, com traço de espessura parecida em toda a
+grade, a pouca variação de estilo que resta está presa à posição (os 1 da direita só mudam de
+inclinação) e as células de transição são borradas. É esse estilo que custa os 55 nats a mais
+de reconstrução.
 
-- cada dígito aparece numa versão "média", com traço de espessura parecida em toda a grade:
-  não existe um 8 grosso e um 8 fino, nem um 7 com e outro sem o tracinho no meio;
-- a pouca variação de estilo que sobra é a que coincide com a direção em que o grupo se
-  espalha no plano: na coluna da direita, os 1 só mudam de inclinação, de vertical (em cima) a
-  bem inclinado (embaixo); e na coluna da esquerda, os 0 só mudam de largura;
-- as células de transição são borradas: como o código não guarda detalhes, o decoder
-  devolve a média das imagens que caem naquele ponto, e a média de um 4 e de um 9, ou de um 3
-  e de um 5, é uma mancha.
-
-E mesmo a identidade se perde em parte: as 548 imagens de 4 e 9 confundidas no item 1 são
-imagens cujo código simplesmente não diz qual dos dois dígitos é. Os 55 nats a mais de reconstrução
-são o preço desse estilo e dessa identidade que não cabem em dois números.
-
-**3. As duas interpolações.** Só a linha de baixo, a do espaço latente, passa por imagens que
-parecem dígitos. Na de cima, cada imagem do meio é o 4 e o 7 ao mesmo tempo, os dois
-semitransparentes: em $t = 0.44$ e $t = 0.56$ aparecem as duas hastes verticais e os dois
-topos, em cinza. Isso porque somar pixels não sabe nada de dígitos: a média de duas imagens
-de dígito não é uma imagem de dígito.
-
-A de baixo nunca mostra dois traços sobrepostos: todo quadro tem um traço só, com
-intensidade cheia: o 4 fecha o topo e vira um **9** ($t \approx 0.33$–$0.56$), e a laçada do
-9 se abre na barra do 7 ($t \geq 0.67$). Ela passa por um 9 porque, no espaço latente, o 9 fica
-entre o 4 e o 7, a mesma vizinhança 4–9–7 da parte de cima das Figuras 4 e 5. Funciona
-porque cada quadro é **gerado** pelo decoder a partir de um código, não misturado. E a KL é
-o que garante que os códigos entre $\mu_a$ e $\mu_b$ decodifiquem em algo plausível: ela puxa
-todas as gaussianas para o prior, então elas se sobrepõem e preenchem o espaço entre as
-imagens de treino. Num autoencoder comum, esse caminho poderia passar por um "buraco" que o
-decoder nunca viu.
+**3. As duas interpolações.** Só a linha de baixo passa por imagens que parecem dígitos. Na
+de cima, os quadros do meio ($t \approx 0.33$–$0.56$) são o 4 e o 7 sobrepostos e
+semitransparentes: misturar pixels só sobrepõe as duas imagens, e a média de dois dígitos não
+é um dígito. Na de baixo, cada quadro é gerado pelo decoder a partir de um código do caminho
+entre $\mu_a$ e $\mu_b$; como a KL deixa o espaço latente contínuo, sem buracos, todo ponto do
+caminho decodifica num dígito com traço único — o 4 fecha o topo, vira um 9 e abre no 7.
 
 ---
 

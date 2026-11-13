@@ -1,0 +1,11 @@
+# Dependências para rodar o Projeto 2 (classificação):
+#   pip install -r requirements-classificacao.txt
+#   python docs/projects/classification/code/supervised_learning.py
+numpy
+pandas
+matplotlib
+scikit-learn
+imbalanced-learn
+torch
+ipython
+ipykernel

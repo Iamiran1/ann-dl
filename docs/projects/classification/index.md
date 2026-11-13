@@ -98,7 +98,7 @@ O baseline opcional (random forest ou boosting) não foi feito. O enunciado avis
 
 **Camadas.** O teorema da aproximação universal garante que uma camada oculta com ativação não linear é suficiente em princípio, mas não diz quantos neurônios usar. Uma camada é a menor rede que já é não linear, um passo acima da Regressão Logística; sem ela, a rede seria uma Logística.
 
-**Largura.** Escolhida pela validação, antes de definir a rede, entre 8, 16 e 32 neurônios (AdamW, taxa 0,001, parada antecipada, 5 sementes). Na notação da aula, com `W ∈ ℝ^(m×24)`, a rede tem `24m + m + m + 1 = 26m + 1` parâmetros.
+**Largura.** Escolhida pela validação, antes de definir a rede, entre 8, 16 e 32 neurônios (AdamW, taxa 0,001, parada antecipada, 5 sementes).
 
 **Tabela 3 — Escolha da largura (validação, 5 sementes).**
 
@@ -172,7 +172,7 @@ Pelo total de linhas, a rede é pequena (≈ 16 linhas por parâmetro). O númer
 | `pos_weight` = 19,57 | 3.270 | 0,224 ± 0,020 | 35,0 |
 | SMOTENC | 6.222 | 0,152 ± 0,013 | 10,8 |
 
-**Decisão: a rede é treinada sem balanceamento.** O `pos_weight` age como na Logística balanceada: infla as notas, mas não melhora a ordenação, e o mesmo efeito se obtém escolhendo o limiar. O SMOTENC piora de verdade: ele cria 2.952 casos sintéticos a partir de 159 reais, e cerca de 95% dos exemplos de AVC vistos pela rede passam a ser interpolações (risco que o EDA já apontava). O resultado concorda com a literatura sobre modelos de risco clínico: correções de desbalanceamento não melhoram a discriminação e pioram a calibração, e o ganho de sensibilidade que trazem se obtém ajustando o limiar ([van den Goorbergh et al., 2022](https://arxiv.org/abs/2202.09101){:target='_blank'}).
+**Decisão: a rede é treinada sem balanceamento.** O `pos_weight` age como na Logística balanceada: infla as notas, mas não melhora a ordenação, e o mesmo efeito se obtém escolhendo o limiar. O SMOTENC piora de verdade: ele cria 2.952 casos sintéticos a partir de 159 reais, e cerca de 95% dos exemplos de AVC vistos pela rede passam a ser interpolações (risco que o EDA já apontava).
 
 ---
 
@@ -208,7 +208,7 @@ Sem parada antecipada há overfitting: o treino continua melhorando e a validaç
 | Dropout 0,2 | 0,219 | 0,017 | 0,257 | 0,038 | 32,6 |
 | BatchNorm | 0,233 | 0,016 | 0,305 | 0,072 | 18,4 |
 
-Weight decay e dropout não mudaram o resultado além do ruído: com a parada antecipada, a rede quase não chega a decorar, e sobra pouco a regularizar; dropout, além disso, é técnica para redes com capacidade de sobra. A BatchNorm foi a única com efeito visível (+0,013, cerca de 1 desvio), mas aumentou a PR-AUC de treino e a distância para a validação: ela ajudou a rede a se ajustar melhor (seu papel principal é facilitar a otimização), não regularizou.
+Weight decay e dropout praticamente não alteraram o resultado: todas as variações ficaram dentro do ruído entre sementes. Isso é esperado, porque a parada antecipada já interrompe o treino antes de a rede começar a decorar, e sobra pouco para regularizar. No caso do dropout, há mais um motivo: ele funciona melhor em redes com capacidade de sobra, o que não é o caso de uma camada com 8 neurônios. A BatchNorm foi a única técnica com efeito visível, um ganho de 0,013 na validação, cerca de 1 desvio. Esse ganho, porém, veio junto com uma PR-AUC de treino mais alta e uma distância maior entre treino e validação. Ou seja, a BatchNorm não regularizou a rede: ela a ajudou a se ajustar melhor aos dados, que é o papel principal da normalização.
 
 **Busca de hiperparâmetros.** Taxa {0,001; 0,003} × dropout {0; 0,2} × weight decay {0; 0,01} × BatchNorm {não; sim} = 16 configurações, 5 sementes cada.
 
@@ -409,6 +409,5 @@ O script imprime as tabelas e salva as figuras em `docs/projects/classification/
 
 ## Referências
 
-- van den Goorbergh, R., van Smeden, M., Timmerman, D., & Van Calster, B. (2022). [The harm of class imbalance corrections for risk prediction models: illustration and simulation using logistic regression](https://arxiv.org/abs/2202.09101){:target='_blank'}. *Journal of the American Medical Informatics Association*.
 - Material da disciplina: aulas de MLP, Otimização, Regularização e Métricas de classificação ([ANN-DL](https://insper.github.io/ann-dl/){:target='_blank'}).
 - fedesoriano. [Stroke Prediction Dataset](https://www.kaggle.com/datasets/fedesoriano/stroke-prediction-dataset){:target='_blank'}. Kaggle.

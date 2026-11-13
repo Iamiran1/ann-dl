@@ -126,6 +126,7 @@ validation:
 not_in_nav: |
   /exercises/*/code/*
   /projects/*/code/*
+  /examples/*
 
 extra_javascript:
   # A configuração precisa vir ANTES da biblioteca do MathJax
@@ -165,11 +166,5 @@ nav:
     - 2. Classificação: projects/classification/index.md
     - 2. Regressão: projects/regression/index.md
     - 3. Generativo: projects/generative/index.md
-
-  # Remova esta seção inteira quando não precisar mais dos exemplos.
-  - Exemplos de uso:
-    - Como montar o menu: examples/index.md
-    - Notebook no menu: examples/notebook/data-exercise-1.ipynb
-    - Abrir no Colab ↗: https://colab.research.google.com/github/Iamiran1/ann-dl/blob/main/docs/examples/notebook/data-exercise-1.ipynb
 
   - Enunciados da disciplina ↗: https://insper.github.io/ann-dl/
